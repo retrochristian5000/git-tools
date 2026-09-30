@@ -15,6 +15,10 @@
 #include "utf8.h"
 #include "precompose_utf8.h"
 
+#ifdef NO_ICONV
+#error "PRECOMPOSE_UNICODE requires iconv; do not build precompose_utf8.c with NO_ICONV"
+#endif
+
 typedef char *iconv_ibp;
 static const char *repo_encoding = "UTF-8";
 static const char *path_encoding = "UTF-8-MAC";
