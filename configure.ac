@@ -589,7 +589,7 @@ if test "$CURL_CONFIG" != no; then
     dnl Preserve paths with spaces and apostrophes in config.mak.autogen.
     dnl Make invokes CURL_CONFIG through the shell, so store one shell word.
     CURL_CONFIG_QUOTED=$(printf '%s' "$CURL_CONFIG" |
-        sed "s/'/'\\''/g")
+        sed "s/'/'\\\\''/g")
     CURL_CONFIG_MAKE="'$CURL_CONFIG_QUOTED'"
     GIT_CONF_SUBST([CURL_CONFIG], [$CURL_CONFIG_MAKE])
     AC_MSG_NOTICE([Setting CURL_CFLAGS to '$CURL_CFLAGS'])
