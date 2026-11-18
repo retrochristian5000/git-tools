@@ -566,14 +566,34 @@ AC_CHECK_PROG([CURL_CONFIG], [curl-config],
 [curl-config],
 [no])
 
-if test $CURL_CONFIG != no; then
-    GIT_CONF_SUBST([CURL_CONFIG])
-
+if test "$CURL_CONFIG" != no; then
     if test -z "$CURL_CONFIG_OPTS"; then
         CURL_CONFIG_OPTS="--libs"
     fi
 
-    CURL_LDFLAGS=$($CURL_CONFIG $CURL_CONFIG_OPTS)
+    dnl Use the selected executable as one argument, even if its path has
+    dnl spaces. CURL_CONFIG_OPTS intentionally contains separate options.
+    CURL_LDFLAGS=$("$CURL_CONFIG" $CURL_CONFIG_OPTS) ||
+        AC_MSG_ERROR([selected curl-config failed to report linker flags])
+    CURL_CFLAGS=$("$CURL_CONFIG" --cflags) ||
+        AC_MSG_ERROR([selected curl-config failed to report compiler flags])
+
+    dnl curl-config.in is a template, not a configured curl-config. Catch
+    dnl leaked @LIBCURL_PC_*@ values here, before the Git Makefile invokes CC.
+    case "$CURL_CFLAGS $CURL_LDFLAGS" in
+        *'@LIBCURL_'*'@'*)
+            AC_MSG_ERROR([selected curl-config still contains unexpanded libcurl template substitutions])
+            ;;
+    esac
+
+    dnl Preserve paths with spaces and apostrophes in config.mak.autogen.
+    dnl Make invokes CURL_CONFIG through the shell, so store one shell word.
+    CURL_CONFIG_QUOTED=$(printf '%s' "$CURL_CONFIG" |
+        sed "s/'/'\\''/g")
+    CURL_CONFIG_MAKE="'$CURL_CONFIG_QUOTED'"
+    GIT_CONF_SUBST([CURL_CONFIG], [$CURL_CONFIG_MAKE])
+    AC_MSG_NOTICE([Setting CURL_CFLAGS to '$CURL_CFLAGS'])
+    GIT_CONF_SUBST([CURL_CFLAGS], [$CURL_CFLAGS])
     AC_MSG_NOTICE([Setting CURL_LDFLAGS to '$CURL_LDFLAGS'])
     GIT_CONF_SUBST([CURL_LDFLAGS], [$CURL_LDFLAGS])
 fi
